@@ -1,7 +1,8 @@
 module Main exposing (..)
 import Html.App as Html
-import Html.Attributes exposing (id)
-import Html exposing (text, div, h1, h2, p, ul, li, body, Html)
+import List
+import Html.Attributes exposing (id, list, href)
+import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a)
 
 
 main =
@@ -13,7 +14,16 @@ init : Model
 init =
   { header = "User Info"
   , name = "Mike Jefferson"
-  , accounts = "Your other accounts"
+  , accounts =
+      [{ description = "Facebook"
+      , url = "Facebook.com"
+      }
+      ,{ description = "Twitter"
+      , url = "Twitter.com"
+      }
+      ,{ description = "GitHub"
+      , url = "GitHub.com"
+      }]
   , email = "ex@ex.com"
   , location = "Honolulu, Hawaii"
   }
@@ -21,12 +31,22 @@ init =
 type alias Model =
   { header : String
   , name : String
-  , accounts : String
+  , accounts : List Account
   , email : String
   , location : String
   }
 
-view : Model -> Html Never
+type alias Account =
+  { description : String
+  , url : String
+  }
+
+viewAccount : Account -> Html Never
+viewAccount accountInfo =
+  li []
+    [text accountInfo.url]
+
+view :  Model -> Html Never
 view model =
   body []
     [ div [ id "header"]
@@ -41,16 +61,8 @@ view model =
       ]
 
     , div [ id "accounts"]
-      [ h1 []
-        [text model.accounts]
-      , ul []
-        [ li []
-          [text "Facebook"]
-        , li []
-          [text "Twitter"]
-        , li []
-          [text "GitHub"]
-        ]
+      [ h1 [][text "Accounts"]
+      , ul [] (List.map viewAccount model.accounts)
       ]
 
     , div [ id "email"]

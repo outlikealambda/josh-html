@@ -1,13 +1,14 @@
-
-
 div h1{
   color: black
 }
 p{
   margin: 0px 0px 0px 20px;
   color: blue;
+  font-size: 14pt
 }
 #header{
+  margin: -50px 0px 0px 0px;
+  padding: 0px 0px 0px 0px;
   font-size: 28pt
 }
 #accounts li {
