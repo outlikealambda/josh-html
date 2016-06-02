@@ -9,3 +9,7 @@ Name: Mike Jefferson
 Email: mikey.j@gmail.com
 
 Location: Honolulu, Hawaii
+
+##
+Linked accounts
+Name, Email, Location
