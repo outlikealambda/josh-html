@@ -1,4 +1,5 @@
 div h1{
+  margin: 15px 0px 15px 0px;
   color: black
 }
 p{
@@ -12,10 +13,7 @@ p{
   font-size: 28pt
 }
 #accounts li {
-  border: solid 1px #000000;
-  background-color: #ff99c2;
-  padding: 10px;
-  margin: 0px 0px 0px -20px;
+  margin: 10px 0px 0px -20px;
   display: table;
   color: blue;
 }
