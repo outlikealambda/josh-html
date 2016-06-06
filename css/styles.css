@@ -11,12 +11,16 @@ p{
   margin-top: 20px;
   margin-bottom: 13px;
 }
+#fetchUser text{
+  margin-left: 15px;
+}
 input{
   margin-left: 5px;
   margin-bottom: 20px;
 }
 button{
   margin-left: 20px;
+  margin-right: 20px;
 }
 #header{
   margin: 0px 0px 0px 0px;

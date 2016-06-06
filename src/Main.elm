@@ -71,7 +71,7 @@ accountDecoder =
 
 fetchUser : String -> Task Http.Error Model
 fetchUser name =
-  Http.get (modelDecoder name) ("/users/" ++ name ++ ".json")
+  Http.get (modelDecoder name) ("/api/users/" ++ name)
 
 viewAccount : Account -> Html Msg
 viewAccount accountInfo =
