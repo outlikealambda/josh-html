@@ -1,0 +1,20 @@
+{
+  "header": "User Info",
+  "name": "Billy",
+  "accounts": [
+    {
+      "description": "CartoonNetwork",
+      "url": "CartoonNetwork.com"
+    },
+    {
+      "description": "LinkedIn",
+      "url": "LinkedIn.com"
+    },
+    {
+      "description": "GitHub",
+      "url": "GitHub.com"
+    }
+  ],
+  "email": "BillyGABM@gmail.com",
+  "location": "Honolulu, Hawaii"
+}
