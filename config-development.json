@@ -1,0 +1,13 @@
+{
+   "fbSecret": "cef2fa9e690f7ebfc40485c88d2da1a2",
+   "gaSecret": "OY0XgH2EBsbe2wpMADTYaIgx",
+   "gaKey": "36755444493-grukghijsf03fd1gatdncl957q84ditt.apps.googleusercontent.com",
+   "gaApiKey": "AIzaSyDUj17bL4wsLV1Qqn9-sOmNq146HQvGF1U",
+   "trustoSecret": "supertopsecretsecretcommasecreted",
+   "saltOptions" : {
+     "salt": "2BQhnRYn353970gcWdJO9o5u1ofF3dJz",
+     "iterations": 5000,
+     "keylen": 512,
+     "digest": "sha512"
+   }
+}

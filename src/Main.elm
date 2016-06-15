@@ -18,11 +18,11 @@ init : (Model, Cmd Msg)
 init =
   ({ fetchError = Nothing
   , header = "User Information"
-  ,name = ""
-  ,accounts = []
-  ,email = ""
-  ,location = ""
-  ,inputField = ""
+  , name = ""
+  , accounts = []
+  , email = ""
+  , location = ""
+  , inputField = ""
   }, Cmd.none)
 
 subscriptions' : Model -> Sub Msg
