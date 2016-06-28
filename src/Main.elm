@@ -1,7 +1,6 @@
 module Main exposing (..)
 import Html.App as Html
 import Html.Events exposing (onClick, onInput)
-import List
 import Html.Attributes exposing (id, list, href, placeholder)
 import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
 import Http
@@ -18,10 +17,18 @@ init : (Model, Cmd Msg)
 init =
   ({ fetchError = Nothing
   , header = "User Information"
-  , name = ""
-  , accounts = []
-  , email = ""
-  , location = ""
+  , user =
+      { name = ""
+      , id = 0
+      , emails = []
+      , location =
+        { name = ""
+        , id = 0
+        , country = ""
+        , city = ""
+        , postal = 0
+        }
+      }
   , inputField = ""
   }, Cmd.none)
 
@@ -33,58 +40,82 @@ type alias Model =
   { fetchError : Maybe Http.Error
   , inputField : String
   , header : String
-  , name : String
-  , accounts : List Account
-  , email : String
-  , location : String
+  , user : Account
   }
 
 type alias Account =
-  { description : String
-  , url : String
+  { name: String
+  , id: Int
+  --, trustee: List Trustee
+  , emails: List String
+  , location : Location
+  }
+
+type alias Location =
+  { name: String
+  , id: Int
+  , country: String
+  , city: String
+  , postal: Int
   }
 
 type Msg
   = FetchUser
-  | FetchUserComplete Model
+  | FetchUserComplete Account
   | FetchUserFailed Http.Error
   | Change String
 
 
 modelDecoder : String -> Json.Decoder Model
 modelDecoder inputField =
-  Json.object5
+  Json.object2
     (Model Nothing inputField)
     ("header" := Json.string)
-    ("name" := Json.string)
-    ("accounts" := Json.list accountDecoder)
-    ("email" := Json.string)
-    ("location" := Json.string)
+    ("user" := accountDecoder)
 
 accountDecoder : Json.Decoder Account
 accountDecoder =
-  Json.object2
+  Json.object4
     Account
-    ("description" := Json.string)
-    ("url" := Json.string)
+    ("name" := Json.string)
+    ("id" := Json.int)
+    ("emails" := Json.list Json.string)
+    ("location" := locationDecoder)
+
+locationDecoder : Json.Decoder Location
+locationDecoder =
+  Json.object5
+    Location
+    ("name" := Json.string)
+    ("id" := Json.int)
+    ("country" := Json.string)
+    ("city" := Json.string)
+    ("postal" := Json.int)
 
 
-fetchUser : String -> Task Http.Error Model
-fetchUser name =
-  Http.get (modelDecoder name) ("/api/users/" ++ name)
+fetchUser : String -> Task Http.Error Account
+fetchUser userId =
+  Http.get accountDecoder ("/api/" ++ userId)
 
+
+{-
 viewAccount : Account -> Html Msg
 viewAccount accountInfo =
   li []
     [text accountInfo.url]
+-}
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Change input -> ({ model | inputField = ( Debug.log "input" input) } , Cmd.none )
-    FetchUser -> (model, Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.inputField)))
-    FetchUserComplete user -> (user, Cmd.none)
-    FetchUserFailed err ->  ({ model | fetchError = Just ( Debug.log "failedFetch" err) } , Cmd.none )
+    Change input ->
+       ({ model | inputField = ( Debug.log "input" input) } , Cmd.none )
+    FetchUser ->
+       (model, Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.inputField)))
+    FetchUserComplete userInfo ->
+       ({ model | user = userInfo } , Cmd.none )
+    FetchUserFailed err ->
+       ({ model | fetchError = Just ( Debug.log "failedFetch" err) } , Cmd.none )
 
 view :  Model -> Html Msg
 view model =
@@ -101,32 +132,39 @@ view model =
           [text model.header]
         ]
       , div [ id "fetchUser"]
-        ([ input [ placeholder "username", onInput Change ] []
+        ([ input [ placeholder "User ID", onInput Change ] []
         , button [ onClick FetchUser ] [text "Go to User"]
         ]
           ++ errorUser)
       , div [ id "username"]
         [ h1 []
-          [text "You are"]
+          [text "username"]
         , p []
-          [text model.name]
+          [text model.user.name]
+        ]
+      , div []
+        [ h1 []
+          [text "User ID"]
+        , p[]
+          [text (toString model.user.id)]
         ]
 
       , div [ id "accounts"]
         [ h1 [][text "Accounts"]
-        , ul [] (List.map viewAccount model.accounts)
+        , p []
+          [text "we aren't doing this right now"]
         ]
 
       , div [ id "email"]
         [ h1 []
           [text "Your email"]
         , p []
-          [text model.email]
+          [text (toString model.user.emails)]
         ]
       , div [ id "location"]
         [ h1 []
           [text "Your location"]
         , p []
-          [text model.location]
+          [text (toString model.user.location)]
         ]
       ]
