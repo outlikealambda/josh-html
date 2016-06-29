@@ -1,36 +1,43 @@
 module Main exposing (..)
-import Html.App as Html
+import Html.App
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (id, list, href, placeholder)
 import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
 import Http
-import Json.Decode as Json exposing ((:=))
 import Task exposing (Task)
+import UpdateLocation
+import Account exposing (Account, Location, accountDecoder, locationDecoder)
+
 
 
 main : Program Never
 main =
-  Html.program {init = init, view = view, update = update, subscriptions = subscriptions'}
+  Html.App.program {init = init, view = view, update = update, subscriptions = subscriptions'}
 
 
 init : (Model, Cmd Msg)
 init =
-  ({ fetchError = Nothing
-  , header = "User Information"
-  , user =
-      { name = ""
-      , id = 0
-      , emails = []
-      , location =
+  let
+     user =
         { name = ""
-        , id = 0
-        , country = ""
-        , city = ""
-        , postal = 0
+        , id = -1
+        , emails = []
+        , location =
+          { name = ""
+          , id = 0
+          , country = ""
+          , city = ""
+          , postal = 0
+          }
         }
-      }
-  , inputField = ""
-  }, Cmd.none)
+  in
+    ({page = Home
+    , fetchError = Nothing
+    , header = "User Information"
+    , inputField = ""
+    , user = user
+    , inputLocation = UpdateLocation.init user
+    }, Cmd.none)
 
 subscriptions' : Model -> Sub Msg
 subscriptions' model =
@@ -41,61 +48,39 @@ type alias Model =
   , inputField : String
   , header : String
   , user : Account
+  , page : Page
+  , inputLocation : UpdateLocation.Model
   }
 
-type alias Account =
-  { name: String
-  , id: Int
-  --, trustee: List Trustee
-  , emails: List String
-  , location : Location
-  }
+type Page
+  = Home
+  |Locay
 
-type alias Location =
-  { name: String
-  , id: Int
-  , country: String
-  , city: String
-  , postal: Int
-  }
 
 type Msg
   = FetchUser
   | FetchUserComplete Account
   | FetchUserFailed Http.Error
   | Change String
+  | GoToUpdateLocation
+  | UpdateLocationMsg UpdateLocation.Msg
 
 
-modelDecoder : String -> Json.Decoder Model
+{-modelDecoder : String -> Json.Decoder Model
 modelDecoder inputField =
   Json.object2
     (Model Nothing inputField)
     ("header" := Json.string)
     ("user" := accountDecoder)
+    -}
 
-accountDecoder : Json.Decoder Account
-accountDecoder =
-  Json.object4
-    Account
-    ("name" := Json.string)
-    ("id" := Json.int)
-    ("emails" := Json.list Json.string)
-    ("location" := locationDecoder)
-
-locationDecoder : Json.Decoder Location
-locationDecoder =
-  Json.object5
-    Location
-    ("name" := Json.string)
-    ("id" := Json.int)
-    ("country" := Json.string)
-    ("city" := Json.string)
-    ("postal" := Json.int)
 
 
 fetchUser : String -> Task Http.Error Account
 fetchUser userId =
   Http.get accountDecoder ("/api/" ++ userId)
+
+
 
 
 {-
@@ -109,16 +94,20 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Change input ->
-       ({ model | inputField = ( Debug.log "input" input) } , Cmd.none )
+      ({ model | inputField = ( Debug.log "input" input) } , Cmd.none )
     FetchUser ->
-       (model, Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.inputField)))
+      (model, Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.inputField)))
     FetchUserComplete userInfo ->
-       ({ model | user = userInfo } , Cmd.none )
+      ({ model | user = userInfo, inputLocation = UpdateLocation.init userInfo } , Cmd.none )
     FetchUserFailed err ->
-       ({ model | fetchError = Just ( Debug.log "failedFetch" err) } , Cmd.none )
+      ({ model | fetchError = Just ( Debug.log "failedFetch" err) } , Cmd.none )
+    GoToUpdateLocation ->
+      ({model | page = Locay, inputLocation = UpdateLocation.init model.user}, Cmd.none)
+    UpdateLocationMsg msg ->
+      ({model | inputLocation = UpdateLocation.update msg model.inputLocation}, Cmd.none)
 
-view :  Model -> Html Msg
-view model =
+viewHome : Model -> Html Msg
+viewHome model =
   let errorUser =
     case model.fetchError of
       Nothing ->
@@ -138,7 +127,7 @@ view model =
           ++ errorUser)
       , div [ id "username"]
         [ h1 []
-          [text "username"]
+          [text "Username"]
         , p []
           [text model.user.name]
         ]
@@ -167,4 +156,17 @@ view model =
         , p []
           [text (toString model.user.location)]
         ]
+      , div [ id "updateLocay" ]
+        [
+          button [ onClick GoToUpdateLocation ]
+          [text "update"]
+        ]
       ]
+
+view :  Model -> Html Msg
+view model =
+  case model.page of
+    Home ->
+      viewHome model
+    Locay ->
+      Html.App.map UpdateLocationMsg (UpdateLocation.view model.inputLocation)
