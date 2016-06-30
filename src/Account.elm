@@ -1,38 +1,22 @@
 module Account exposing (..)
 import Json.Decode as Json exposing ((:=))
+import Location
 
 
-type alias Account =
+type alias User =
   { name: String
   , id: Int
   --, trustee: List Trustee
   , emails: List String
-  , location : Location
+  , location : Location.Location
   }
 
-type alias Location =
-  { name: String
-  , id: Int
-  , country: String
-  , city: String
-  , postal: Int
-  }
 
-accountDecoder : Json.Decoder Account
-accountDecoder =
+decoder : Json.Decoder User
+decoder =
   Json.object4
-    Account
+    User
     ("name" := Json.string)
     ("id" := Json.int)
     ("emails" := Json.list Json.string)
-    ("location" := locationDecoder)
-
-locationDecoder : Json.Decoder Location
-locationDecoder =
-  Json.object5
-    Location
-    ("name" := Json.string)
-    ("id" := Json.int)
-    ("country" := Json.string)
-    ("city" := Json.string)
-    ("postal" := Json.int)
+    ("location" := Location.decoder)

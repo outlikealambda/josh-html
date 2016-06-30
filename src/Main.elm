@@ -5,8 +5,8 @@ import Html.Attributes exposing (id, list, href, placeholder)
 import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
 import Http
 import Task exposing (Task)
-import UpdateLocation
-import Account exposing (Account, Location, accountDecoder, locationDecoder)
+import EditUserInformation
+import Account
 
 
 
@@ -14,6 +14,14 @@ main : Program Never
 main =
   Html.App.program {init = init, view = view, update = update, subscriptions = subscriptions'}
 
+type alias Model =
+  { fetchError : Maybe Http.Error
+  , userIdInput : String
+  , header : String
+  , user : Account.User
+  , page : Page
+  , inputLocation : EditUserInformation.Model
+  }
 
 init : (Model, Cmd Msg)
 init =
@@ -24,33 +32,25 @@ init =
         , emails = []
         , location =
           { name = ""
-          , id = 0
+          , id = -1
           , country = ""
           , city = ""
-          , postal = 0
+          , postal = ""
           }
         }
   in
     ({page = Home
     , fetchError = Nothing
     , header = "User Information"
-    , inputField = ""
+    , userIdInput = ""
     , user = user
-    , inputLocation = UpdateLocation.init user
+    , inputLocation = EditUserInformation.init user
     }, Cmd.none)
 
 subscriptions' : Model -> Sub Msg
 subscriptions' model =
   Sub.none
 
-type alias Model =
-  { fetchError : Maybe Http.Error
-  , inputField : String
-  , header : String
-  , user : Account
-  , page : Page
-  , inputLocation : UpdateLocation.Model
-  }
 
 type Page
   = Home
@@ -59,14 +59,17 @@ type Page
 
 type Msg
   = FetchUser
-  | FetchUserComplete Account
+  | FetchUserComplete Account.User
   | FetchUserFailed Http.Error
   | Change String
   | GoToUpdateLocation
-  | UpdateLocationMsg UpdateLocation.Msg
+  | UpdateLocationMsg EditUserInformation.Msg
+  | FullLocationUpdate EditUserInformation.Msg
 
 
-{-modelDecoder : String -> Json.Decoder Model
+{-
+--I don't even know if this is ever used
+modelDecoder : String -> Json.Decoder Model
 modelDecoder inputField =
   Json.object2
     (Model Nothing inputField)
@@ -76,14 +79,13 @@ modelDecoder inputField =
 
 
 
-fetchUser : String -> Task Http.Error Account
+fetchUser : String -> Task Http.Error Account.User
 fetchUser userId =
-  Http.get accountDecoder ("/api/" ++ userId)
-
-
+  Http.get Account.decoder ("/api/" ++ userId)
 
 
 {-
+--I don't even know if this is ever used
 viewAccount : Account -> Html Msg
 viewAccount accountInfo =
   li []
@@ -94,17 +96,19 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Change input ->
-      ({ model | inputField = ( Debug.log "input" input) } , Cmd.none )
+      ({ model | userIdInput = ( Debug.log "input" input) } , Cmd.none )
     FetchUser ->
-      (model, Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.inputField)))
+      (model, Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.userIdInput)))
     FetchUserComplete userInfo ->
-      ({ model | user = userInfo, inputLocation = UpdateLocation.init userInfo } , Cmd.none )
+      ({ model | user = userInfo, inputLocation = EditUserInformation.init userInfo } , Cmd.none )
     FetchUserFailed err ->
       ({ model | fetchError = Just ( Debug.log "failedFetch" err) } , Cmd.none )
     GoToUpdateLocation ->
-      ({model | page = Locay, inputLocation = UpdateLocation.init model.user}, Cmd.none)
+      ({model | page = Locay, inputLocation = EditUserInformation.init model.user}, Cmd.none)
     UpdateLocationMsg msg ->
-      ({model | inputLocation = UpdateLocation.update msg model.inputLocation}, Cmd.none)
+      ({model | inputLocation = EditUserInformation.update msg model.inputLocation}, Cmd.none)
+    FullLocationUpdate msg ->
+      ({model | page = Home }, Cmd.none)
 
 viewHome : Model -> Html Msg
 viewHome model =
@@ -169,4 +173,4 @@ view model =
     Home ->
       viewHome model
     Locay ->
-      Html.App.map UpdateLocationMsg (UpdateLocation.view model.inputLocation)
+      Html.App.map UpdateLocationMsg (EditUserInformation.view model.inputLocation)
