@@ -44,7 +44,7 @@ init =
     , header = "User Information"
     , userIdInput = ""
     , user = user
-    , inputLocation = EditUserInformation.init user
+    , inputLocation = (EditUserInformation.init)
     }, Cmd.none)
 
 subscriptions' : Model -> Sub Msg
@@ -67,30 +67,12 @@ type Msg
   | FullLocationUpdate EditUserInformation.Msg
 
 
-{-
---I don't even know if this is ever used
-modelDecoder : String -> Json.Decoder Model
-modelDecoder inputField =
-  Json.object2
-    (Model Nothing inputField)
-    ("header" := Json.string)
-    ("user" := accountDecoder)
-    -}
-
-
 
 fetchUser : String -> Task Http.Error Account.User
 fetchUser userId =
   Http.get Account.decoder ("/api/" ++ userId)
 
 
-{-
---I don't even know if this is ever used
-viewAccount : Account -> Html Msg
-viewAccount accountInfo =
-  li []
-    [text accountInfo.url]
--}
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -100,15 +82,19 @@ update msg model =
     FetchUser ->
       (model, Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.userIdInput)))
     FetchUserComplete userInfo ->
-      ({ model | user = userInfo, inputLocation = EditUserInformation.init userInfo } , Cmd.none )
+      ({ model | user = userInfo, inputLocation = (EditUserInformation.init) } , Cmd.none )
     FetchUserFailed err ->
       ({ model | fetchError = Just ( Debug.log "failedFetch" err) } , Cmd.none )
     GoToUpdateLocation ->
-      ({model | page = Locay, inputLocation = EditUserInformation.init model.user}, Cmd.none)
+      ({model | page = Locay, inputLocation = (EditUserInformation.init) }, Cmd.none)
     UpdateLocationMsg msg ->
-      ({model | inputLocation = EditUserInformation.update msg model.inputLocation}, Cmd.none)
+      let
+        (update, updateCmd) =
+          EditUserInformation.update msg model.user model.inputLocation
+      in
+        ({model | inputLocation = update}, Cmd.map UpdateLocationMsg updateCmd)
     FullLocationUpdate msg ->
-      ({model | page = Home }, Cmd.none)
+      ({model | page = Home}, Cmd.none)
 
 viewHome : Model -> Html Msg
 viewHome model =
@@ -158,7 +144,10 @@ viewHome model =
         [ h1 []
           [text "Your location"]
         , p []
-          [text (toString model.user.location)]
+          [text ("name:  " ++ toString model.user.location.name ++
+            ", country:  " ++ toString model.user.location.country ++
+            ", city:  " ++ toString model.user.location.city ++
+            ", postal:  " ++ toString model.user.location.postal)]
         ]
       , div [ id "updateLocay" ]
         [

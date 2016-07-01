@@ -1,7 +1,7 @@
 {
   "name": "trustocracy-elm",
   "version": "1.0.0",
-  "description": "Node runner for trustocracy elm frontend",
+  "description": "user information page beginnings",
   "scripts": {
     "start": "npm run build-elm && npm run start-server",
     "build-elm": "elm make src/Main.elm --output dist/elm.js",
