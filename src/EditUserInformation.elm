@@ -8,7 +8,6 @@ import Http
 import Json.Encode as Encode
 import Task exposing (Task)
 import Json.Decode as Decode
---import String
 
 
 
@@ -19,6 +18,7 @@ type alias Model =
   , country: String
   , city: String
   , postal: String
+  , getError: Maybe Http.Error
   , updateError: Maybe Http.Error
   , addError: Maybe Http.Error
   , removeError: Maybe Http.Error
@@ -26,17 +26,20 @@ type alias Model =
   }
 
 
-init : Model
-init =
+init : Account.User -> (Model, Cmd Msg)
+init user =
+  (
   { name = ""
   , country = ""
   , city = ""
   , postal = ""
+  , getError = Nothing
   , updateError = Nothing
   , addError = Nothing
   , removeError = Nothing
   , status = ""
-  }
+  }, getCmd user
+  )
 
 encoder : Model -> Encode.Value
 encoder {name, country, city, postal} =
@@ -52,6 +55,9 @@ type Msg
   |ChangeCo String
   |ChangeCi String
   |ChangePo String
+  |GetME
+  |GetFailed Http.Error
+  |GetComplete Location
   |UpdateME
   |UpdateFailed Http.Error
   |UpdateComplete Location
@@ -62,6 +68,14 @@ type Msg
   |RemoveFailed Http.Error
   |RemoveComplete Account.User
 
+getCmd : Account.User -> Cmd Msg
+getCmd user =
+   Task.perform GetFailed GetComplete (getME user)
+
+getME : Account.User -> Platform.Task Http.Error Location.Location
+getME user =
+  Http.get
+  Location.decoder ("/api/" ++ toString user.id ++ "/getLocation")
 
 updateMe : Model -> Account.User -> Platform.Task Http.Error Location.Location
 updateMe model user =
@@ -101,12 +115,18 @@ update msg user model =
       { model | city = ( Debug.log "input" input) } ![]
     ChangePo input ->
       { model | postal = ( Debug.log "input" input) } ![]
+    GetME ->
+      ({model | status = "getting"}, Task.perform GetFailed GetComplete ( getME (Debug.log "getting" user)))
+    GetFailed err ->
+      { model | getError = Just ( Debug.log "failedGet" err)}![]
+    GetComplete {name, country, city, postal} ->
+      {model | status = "got", name = name, country = country, city = city, postal = postal }![]
     UpdateME ->
-      ({model | status = "saving"}, Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model) user ))
+      ({model | status = "updating"}, Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model) user ))
     UpdateFailed err ->
       { model | updateError = Just ( Debug.log "failedUpdate" err) }![]
     UpdateComplete locay ->
-      {model | status = "saved"} ![]
+      {model | status = "updated"} ![]
     AddME ->
       ({model | status = "adding"}, Task.perform AddFailed AddComplete ( addME (Debug.log "adding" model) user ))
     AddFailed err ->
@@ -129,10 +149,30 @@ view model =
       [text "edit user (location) information"]
   , div [ id "locationInputs"]
     [ h2 [] [ text "Constituent Of: "]
-      , input [ placeholder "Location Name", onInput ChangeName ] []
-      , input [ placeholder "Country Name", onInput ChangeCo ] []
-      , input [ placeholder "City Name", onInput ChangeCi ] []
-      , input [ placeholder "Postal Number", onInput ChangePo ] []
+      , input
+        [ placeholder "Location Name"
+        , onInput ChangeName
+        , Html.Attributes.value model.name
+        ]
+        []
+      , input
+        [ placeholder "Country Name"
+        , onInput ChangeCo
+        , Html.Attributes.value model.country
+        ]
+        []
+      , input
+        [ placeholder "City Name"
+        , onInput ChangeCi
+        , Html.Attributes.value model.city
+        ]
+        []
+      , input
+      [ placeholder "Postal Number"
+      , onInput ChangePo
+      , Html.Attributes.value model.postal
+      ]
+      []
     ]
   , div [ id "updateLocation"]
     [ button [ onClick UpdateME ] [text "UPDATE YOUR LOCATION"]]

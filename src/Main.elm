@@ -26,7 +26,7 @@ type alias Model =
 init : (Model, Cmd Msg)
 init =
   let
-     user =
+    user =
         { name = ""
         , id = -1
         , emails = []
@@ -38,14 +38,16 @@ init =
           , postal = ""
           }
         }
+    (inputLocation, msg) =
+      EditUserInformation.init user
   in
     ({page = Home
     , fetchError = Nothing
     , header = "User Information"
     , userIdInput = ""
     , user = user
-    , inputLocation = (EditUserInformation.init)
-    }, Cmd.none)
+    , inputLocation = inputLocation
+    }, Cmd.map UpdateLocationMsg msg)
 
 subscriptions' : Model -> Sub Msg
 subscriptions' model =
@@ -64,8 +66,6 @@ type Msg
   | Change String
   | GoToUpdateLocation
   | UpdateLocationMsg EditUserInformation.Msg
-  | FullLocationUpdate EditUserInformation.Msg
-
 
 
 fetchUser : String -> Task Http.Error Account.User
@@ -82,19 +82,25 @@ update msg model =
     FetchUser ->
       (model, Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.userIdInput)))
     FetchUserComplete userInfo ->
-      ({ model | user = userInfo, inputLocation = (EditUserInformation.init) } , Cmd.none )
+      let
+        (inputLocation, msg) =
+          EditUserInformation.init userInfo
+      in
+        ({ model | user = userInfo, inputLocation = inputLocation} , Cmd.map UpdateLocationMsg msg )
     FetchUserFailed err ->
       ({ model | fetchError = Just ( Debug.log "failedFetch" err) } , Cmd.none )
     GoToUpdateLocation ->
-      ({model | page = Locay, inputLocation = (EditUserInformation.init) }, Cmd.none)
+      let
+        (inputLocation, msg) =
+          EditUserInformation.init model.user
+      in
+        ({model | page = Locay, inputLocation = inputLocation }, Cmd.map UpdateLocationMsg msg)
     UpdateLocationMsg msg ->
       let
         (update, updateCmd) =
           EditUserInformation.update msg model.user model.inputLocation
       in
         ({model | inputLocation = update}, Cmd.map UpdateLocationMsg updateCmd)
-    FullLocationUpdate msg ->
-      ({model | page = Home}, Cmd.none)
 
 viewHome : Model -> Html Msg
 viewHome model =
@@ -121,13 +127,14 @@ viewHome model =
         , p []
           [text model.user.name]
         ]
+{-
       , div []
         [ h1 []
           [text "User ID"]
         , p[]
           [text (toString model.user.id)]
         ]
-
+-}
       , div [ id "accounts"]
         [ h1 [][text "Accounts"]
         , p []
