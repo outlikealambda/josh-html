@@ -61,9 +61,11 @@ type Msg
   |UpdateME
   |UpdateFailed Http.Error
   |UpdateComplete Location
+{-
   |AddME
   |AddFailed Http.Error
   |AddComplete Location
+-}
   |RemoveME
   |RemoveFailed Http.Error
   |RemoveComplete Account.User
@@ -85,7 +87,7 @@ updateMe model user =
     |> Http.string
     |> post'
       Location.decoder ("/api/" ++ toString user.id ++ "/updateLocation" )
-
+{-
 addME : Model -> Account.User -> Platform.Task Http.Error Location.Location
 addME model user =
 
@@ -94,7 +96,7 @@ addME model user =
     |> Http.string
     |> post'
       Location.decoder ("/api/" ++ toString user.id ++ "/postLocation" )
-
+-}
 
 removeME : Account.User -> Platform.Task Http.Error Account.User
 removeME user =
@@ -125,19 +127,21 @@ update msg user model =
       ({model | status = "updating"}, Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model) user ))
     UpdateFailed err ->
       { model | updateError = Just ( Debug.log "failedUpdate" err) }![]
-    UpdateComplete locay ->
+    UpdateComplete updatedLocation ->
       {model | status = "updated"} ![]
+{-
     AddME ->
       ({model | status = "adding"}, Task.perform AddFailed AddComplete ( addME (Debug.log "adding" model) user ))
     AddFailed err ->
       { model | addError = Just ( Debug.log "failedAdd" err) }![]
-    AddComplete locay ->
+    AddComplete addedLocation ->
       {model | status = "added"} ![]
+-}
     RemoveME ->
       ({model | status = "removing"}, Task.perform RemoveFailed RemoveComplete ( removeME (Debug.log "removing" user)))
     RemoveFailed err ->
       { model | removeError = Just ( Debug.log "failedRemove" err) }![]
-    RemoveComplete user ->
+    RemoveComplete currentUser ->
       {model | status = "removed"} ![]
 
 
@@ -175,9 +179,11 @@ view model =
       []
     ]
   , div [ id "updateLocation"]
-    [ button [ onClick UpdateME ] [text "UPDATE YOUR LOCATION"]]
+    [ button [ onClick UpdateME ] [text "CHANGE YOUR LOCATION"]]
+{-
   , div [ id "addLocation"]
     [ button [onClick AddME][text "ADD YOUR LOCATION"]]
+-}
   , div [ id "deleteLocation"]
     [ button [onClick RemoveME][text "REMOVE YOUR LOCATION"]]
 
