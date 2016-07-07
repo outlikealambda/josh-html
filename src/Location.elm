@@ -11,6 +11,9 @@ type alias Location =
   , postal: String
   }
 
+empty: Location
+empty =
+  {name = "none", id = -1 ,country = "none",city = "none",postal = "none"}
 
 decoder : Json.Decoder Location
 decoder =

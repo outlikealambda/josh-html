@@ -21,7 +21,7 @@ decoder =
     ("id" := Json.int)
     ("emails" := Json.list Json.string)
     (Json.oneOf ["location" := Location.decoder, Json.succeed
-      {name = "none", id = -1 ,country = "none",city = "none",postal = "none"}])
+      Location.empty])
 
 {-encoder : User -> Encode.Value
 encoder {name,id,emails,location} =

@@ -50,6 +50,8 @@ encoder {name, country, city, postal} =
     ,("postal", Encode.string postal)
     ]
 
+
+
 type Msg
   = ChangeName String
   |ChangeCo String
@@ -105,9 +107,18 @@ removeME user =
     Account.decoder
     ("/api/" ++ toString user.id ++ "/deleteLocation" )
 
+type alias Context msg =
+  { next : (Msg -> msg)
+  , goHome : Location.Location -> msg
+  }
 
-update : Msg -> Account.User -> Model -> (Model, Cmd Msg)
-update msg user model =
+toCmd : a -> Cmd a
+toCmd msg =
+  Task.succeed msg
+  |> Task.perform identity identity
+
+update : Context msg -> Msg -> Account.User -> Model -> (Model, Cmd msg)
+update context msg user model =
   case msg of
     ChangeName input ->
       { model | name = ( Debug.log "input" input) } ![]
@@ -118,17 +129,19 @@ update msg user model =
     ChangePo input ->
       { model | postal = ( Debug.log "input" input) } ![]
     GetME ->
-      ({model | status = "getting"}, Task.perform GetFailed GetComplete ( getME (Debug.log "getting" user)))
+      ({model | status = "getting"}
+      , Cmd.map context.next <| Task.perform GetFailed GetComplete ( getME (Debug.log "getting" user)))
     GetFailed err ->
-      { model | getError = Just ( Debug.log "failedGet" err)}![]
+      { model | getError = Just ( Debug.log "failed to get" err)} ![]
     GetComplete {name, country, city, postal} ->
-      {model | status = "got", name = name, country = country, city = city, postal = postal }![]
+      {model | status = "got", name = name, country = country, city = city, postal = postal } ![]
     UpdateME ->
-      ({model | status = "updating"}, Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model) user ))
+      ({model | status = "updating"}
+      , Cmd.map context.next <| Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model) user ))
     UpdateFailed err ->
-      { model | updateError = Just ( Debug.log "failedUpdate" err) }![]
+      { model | updateError = Just ( Debug.log "failed to update" err) } ![]
     UpdateComplete updatedLocation ->
-      {model | status = "updated"} ![]
+      ({model | status = "updated"}, toCmd <| context.goHome updatedLocation)
 {-
     AddME ->
       ({model | status = "adding"}, Task.perform AddFailed AddComplete ( addME (Debug.log "adding" model) user ))
@@ -138,11 +151,12 @@ update msg user model =
       {model | status = "added"} ![]
 -}
     RemoveME ->
-      ({model | status = "removing"}, Task.perform RemoveFailed RemoveComplete ( removeME (Debug.log "removing" user)))
+      ({model | status = "removing"}
+      , Cmd.map context.next <| Task.perform RemoveFailed RemoveComplete ( removeME (Debug.log "removing" user)))
     RemoveFailed err ->
-      { model | removeError = Just ( Debug.log "failedRemove" err) }![]
+      { model | removeError = Just ( Debug.log "failed to remove" err) } ![]
     RemoveComplete currentUser ->
-      {model | status = "removed"} ![]
+      ({model | status = "removed"}, toCmd <| context.goHome Location.empty)
 
 
 

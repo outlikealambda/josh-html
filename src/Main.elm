@@ -7,6 +7,7 @@ import Http
 import Task exposing (Task)
 import EditUserInformation
 import Account
+import Location exposing (Location)
 
 
 
@@ -65,6 +66,7 @@ type Msg
   | FetchUserFailed Http.Error
   | Change String
   | GoToUpdateLocation
+  | LocationChanged Location
   | UpdateLocationMsg EditUserInformation.Msg
 
 
@@ -73,6 +75,9 @@ fetchUser userId =
   Http.get Account.decoder ("/api/" ++ userId)
 
 
+updateUserLocation: Location -> Account.User -> Account.User
+updateUserLocation updatedLocation user =
+  {user | location = updatedLocation}
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -80,7 +85,8 @@ update msg model =
     Change input ->
       ({ model | userIdInput = ( Debug.log "input" input) } , Cmd.none )
     FetchUser ->
-      (model, Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.userIdInput)))
+      (model,
+       Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.userIdInput)))
     FetchUserComplete userInfo ->
       let
         (inputLocation, msg) =
@@ -97,10 +103,16 @@ update msg model =
         ({model | page = Locay, inputLocation = inputLocation }, Cmd.map UpdateLocationMsg msg)
     UpdateLocationMsg msg ->
       let
+        context =
+          {next = UpdateLocationMsg
+          , goHome = LocationChanged
+          }
         (update, updateCmd) =
-          EditUserInformation.update msg model.user model.inputLocation
+          EditUserInformation.update context msg model.user model.inputLocation
       in
-        ({model | inputLocation = update}, Cmd.map UpdateLocationMsg updateCmd)
+        ({model | inputLocation = update}, updateCmd)
+    LocationChanged updatedLocation->
+      {model | page = Home, user = updateUserLocation updatedLocation model.user} ![]
 
 viewHome : Model -> Html Msg
 viewHome model =
