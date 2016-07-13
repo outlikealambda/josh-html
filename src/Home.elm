@@ -1,8 +1,8 @@
-module Main exposing (..)
+module Home exposing (..)
 import Html.App
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (id, list, href, placeholder)
-import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
+import Html exposing (span, text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
 import Http
 import Task exposing (Task)
 import EditUserInformation
@@ -20,7 +20,7 @@ type alias Model =
   , userIdInput : String
   , header : String
   , user : Account.User
-  , page : Page
+  , page: Page
   , inputLocation : EditUserInformation.Model
   }
 
@@ -31,13 +31,7 @@ init =
         { name = ""
         , id = -1
         , emails = []
-        , location =
-          { name = ""
-          , id = -1
-          , country = ""
-          , city = ""
-          , postal = ""
-          }
+        , locations = []
         }
     (inputLocation, msg) =
       EditUserInformation.init user
@@ -48,7 +42,7 @@ init =
     , userIdInput = ""
     , user = user
     , inputLocation = inputLocation
-    }, Cmd.map UpdateLocationMsg msg)
+    }, Cmd.map UpdateLocationMsg msg)--Cmd.map UpdateLocationMsg msg)
 
 subscriptions' : Model -> Sub Msg
 subscriptions' model =
@@ -66,7 +60,7 @@ type Msg
   | FetchUserFailed Http.Error
   | Change String
   | GoToUpdateLocation
-  | LocationChanged Location
+  | LocationChanged (List Location)
   | UpdateLocationMsg EditUserInformation.Msg
 
 
@@ -75,9 +69,10 @@ fetchUser userId =
   Http.get Account.decoder ("/api/" ++ userId)
 
 
-updateUserLocation: Location -> Account.User -> Account.User
+updateUserLocation: List Location -> Account.User -> Account.User
 updateUserLocation updatedLocation user =
-  {user | location = updatedLocation}
+  {user | locations = updatedLocation}
+
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -92,15 +87,18 @@ update msg model =
         (inputLocation, msg) =
           EditUserInformation.init userInfo
       in
-        ({ model | user = userInfo, inputLocation = inputLocation} , Cmd.map UpdateLocationMsg msg )
+
+      ({ model | user = userInfo} , Cmd.none )
     FetchUserFailed err ->
       ({ model | fetchError = Just ( Debug.log "failedFetch" err) } , Cmd.none )
+
     GoToUpdateLocation ->
       let
         (inputLocation, msg) =
           EditUserInformation.init model.user
       in
         ({model | page = Locay, inputLocation = inputLocation }, Cmd.map UpdateLocationMsg msg)
+
     UpdateLocationMsg msg ->
       let
         context =
@@ -113,6 +111,11 @@ update msg model =
         ({model | inputLocation = update}, updateCmd)
     LocationChanged updatedLocation->
       {model | page = Home, user = updateUserLocation updatedLocation model.user} ![]
+
+
+htmlToList: Html b -> List (Html b)
+htmlToList a =
+  flip (::) [] a
 
 viewHome : Model -> Html Msg
 viewHome model =
@@ -162,11 +165,12 @@ viewHome model =
       , div [ id "location"]
         [ h1 []
           [text "Your location"]
-        , p []
-          [text ("name:  " ++ toString model.user.location.name ++
-            ", country:  " ++ toString model.user.location.country ++
-            ", city:  " ++ toString model.user.location.city ++
-            ", postal:  " ++ toString model.user.location.postal)]
+        , ul []
+          (List.map (li []
+            << htmlToList
+            << text
+            << Location.toString)
+            model.user.locations)
         ]
       , div [ id "updateLocay" ]
         [

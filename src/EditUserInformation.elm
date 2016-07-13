@@ -1,7 +1,7 @@
 module EditUserInformation exposing (..)
 import Account
 import Location exposing (Location)
-import Html.Events exposing (onClick, onInput)
+--import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (id, list, href, placeholder)
 import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
 import Http
@@ -14,10 +14,7 @@ import Json.Decode as Decode
 
 
 type alias Model =
-  { name: String
-  , country: String
-  , city: String
-  , postal: String
+  { locations: List Location
   , getError: Maybe Http.Error
   , updateError: Maybe Http.Error
   , addError: Maybe Http.Error
@@ -29,10 +26,7 @@ type alias Model =
 init : Account.User -> (Model, Cmd Msg)
 init user =
   (
-  { name = ""
-  , country = ""
-  , city = ""
-  , postal = ""
+  { locations = []
   , getError = Nothing
   , updateError = Nothing
   , addError = Nothing
@@ -42,44 +36,20 @@ init user =
   )
 
 encoder : Model -> Encode.Value
-encoder {name, country, city, postal} =
+encoder {locations} =
   Encode.object
-    [("name", Encode.string name)
-    ,("country", Encode.string country)
-    ,("city", Encode.string city)
-    ,("postal", Encode.string postal)
+    [("locations", Encode.list (List.map Location.encoder locations))
     ]
 
-
-
-type Msg
-  = ChangeName String
-  |ChangeCo String
-  |ChangeCi String
-  |ChangePo String
-  |GetME
-  |GetFailed Http.Error
-  |GetComplete Location
-  |UpdateME
-  |UpdateFailed Http.Error
-  |UpdateComplete Location
-{-
-  |AddME
-  |AddFailed Http.Error
-  |AddComplete Location
--}
-  |RemoveME
-  |RemoveFailed Http.Error
-  |RemoveComplete Account.User
 
 getCmd : Account.User -> Cmd Msg
 getCmd user =
    Task.perform GetFailed GetComplete (getME user)
 
-getME : Account.User -> Platform.Task Http.Error Location.Location
+getME : Account.User -> Platform.Task Http.Error (List Location.Location)
 getME user =
   Http.get
-  Location.decoder ("/api/" ++ toString user.id ++ "/getLocation")
+  (Decode.list Location.decoder) ("/api/" ++ toString user.id ++ "/getLocation")
 
 updateMe : Model -> Account.User -> Platform.Task Http.Error Location.Location
 updateMe model user =
@@ -89,7 +59,7 @@ updateMe model user =
     |> Http.string
     |> post'
       Location.decoder ("/api/" ++ toString user.id ++ "/updateLocation" )
-{-
+
 addME : Model -> Account.User -> Platform.Task Http.Error Location.Location
 addME model user =
 
@@ -98,7 +68,7 @@ addME model user =
     |> Http.string
     |> post'
       Location.decoder ("/api/" ++ toString user.id ++ "/postLocation" )
--}
+
 
 removeME : Account.User -> Platform.Task Http.Error Account.User
 removeME user =
@@ -109,7 +79,7 @@ removeME user =
 
 type alias Context msg =
   { next : (Msg -> msg)
-  , goHome : Location.Location -> msg
+  , goHome : List Location.Location -> msg
   }
 
 toCmd : a -> Cmd a
@@ -117,9 +87,33 @@ toCmd msg =
   Task.succeed msg
   |> Task.perform identity identity
 
+
+type Msg
+  =
+    {-ChangeName String
+  |ChangeCo String
+  |ChangeCi String
+  |ChangePo String
+  -}
+  GetME
+  |GetFailed Http.Error
+  |GetComplete (List Location)
+{-
+  |UpdateME
+  |UpdateFailed Http.Error
+  |UpdateComplete Location
+  |AddME
+  |AddFailed Http.Error
+  |AddComplete Location
+  |RemoveME
+  |RemoveFailed Http.Error
+  |RemoveComplete Account.User
+-}
+
 update : Context msg -> Msg -> Account.User -> Model -> (Model, Cmd msg)
 update context msg user model =
   case msg of
+{-
     ChangeName input ->
       { model | name = ( Debug.log "input" input) } ![]
     ChangeCo input ->
@@ -128,13 +122,15 @@ update context msg user model =
       { model | city = ( Debug.log "input" input) } ![]
     ChangePo input ->
       { model | postal = ( Debug.log "input" input) } ![]
+      -}
     GetME ->
       ({model | status = "getting"}
       , Cmd.map context.next <| Task.perform GetFailed GetComplete ( getME (Debug.log "getting" user)))
     GetFailed err ->
       { model | getError = Just ( Debug.log "failed to get" err)} ![]
-    GetComplete {name, country, city, postal} ->
-      {model | status = "got", name = name, country = country, city = city, postal = postal } ![]
+    GetComplete locations ->
+      {model | status = "got", locations = locations } ![]
+{-
     UpdateME ->
       ({model | status = "updating"}
       , Cmd.map context.next <| Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model) user ))
@@ -142,14 +138,13 @@ update context msg user model =
       { model | updateError = Just ( Debug.log "failed to update" err) } ![]
     UpdateComplete updatedLocation ->
       ({model | status = "updated"}, toCmd <| context.goHome updatedLocation)
-{-
     AddME ->
       ({model | status = "adding"}, Task.perform AddFailed AddComplete ( addME (Debug.log "adding" model) user ))
     AddFailed err ->
       { model | addError = Just ( Debug.log "failedAdd" err) }![]
     AddComplete addedLocation ->
       {model | status = "added"} ![]
--}
+
     RemoveME ->
       ({model | status = "removing"}
       , Cmd.map context.next <| Task.perform RemoveFailed RemoveComplete ( removeME (Debug.log "removing" user)))
@@ -157,7 +152,7 @@ update context msg user model =
       { model | removeError = Just ( Debug.log "failed to remove" err) } ![]
     RemoveComplete currentUser ->
       ({model | status = "removed"}, toCmd <| context.goHome Location.empty)
-
+-}
 
 
 view : Model -> Html Msg
@@ -165,7 +160,8 @@ view model =
   div [ id "header" ]
     [ h2 []
       [text "edit user (location) information"]
-  , div [ id "locationInputs"]
+    ]
+  {-, div [ id "locationInputs"]
     [ h2 [] [ text "Constituent Of: "]
       , input
         [ placeholder "Location Name"
@@ -202,7 +198,7 @@ view model =
     [ button [onClick RemoveME][text "REMOVE YOUR LOCATION"]]
 
   , div [][text model.status]
-  ]
+  ]-}
 
 delete' : Decode.Decoder a -> String ->Task.Task Http.Error a
 delete' decoder url =

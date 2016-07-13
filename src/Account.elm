@@ -1,16 +1,17 @@
 module Account exposing (..)
 import Json.Decode as Json exposing ((:=))
-import Location
-import Json.Encode as Encode
+import Location exposing (Location)
 
 
 type alias User =
   { name: String
   , id: Int
   --, trustee: List Trustee
-  , emails: List String
-  , location : Location.Location
+  , emails: List Email
+  , locations : List Location
   }
+
+type alias Email = String
 
 
 decoder : Json.Decoder User
@@ -20,8 +21,11 @@ decoder =
     ("name" := Json.string)
     ("id" := Json.int)
     ("emails" := Json.list Json.string)
-    (Json.oneOf ["location" := Location.decoder, Json.succeed
+    ("location" := Json.list Location.decoder)
+{-
+    (Json.oneOf ["location" := Json.list Location.decoder, Json.succeed
       Location.empty])
+      -}
 
 {-encoder : User -> Encode.Value
 encoder {name,id,emails,location} =

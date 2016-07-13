@@ -15,6 +15,13 @@ empty: Location
 empty =
   {name = "none", id = -1 ,country = "none",city = "none",postal = "none"}
 
+toString: Location -> String
+toString location =
+  "name:  " ++ location.name ++
+  ", country:  " ++ location.country ++
+  ", city:  " ++ location.city ++
+  ", postal:  " ++ location.postal
+
 decoder : Json.Decoder Location
 decoder =
   Json.object5
