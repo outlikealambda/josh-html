@@ -17,10 +17,10 @@ empty =
 
 toString: Location -> String
 toString location =
-  "name:  " ++ location.name ++
-  ", country:  " ++ location.country ++
-  ", city:  " ++ location.city ++
-  ", postal:  " ++ location.postal
+  "name: " ++ location.name ++
+  ", country: " ++ location.country ++
+  ", city:" ++ location.city ++
+  ", postal: " ++ location.postal
 
 decoder : Json.Decoder Location
 decoder =

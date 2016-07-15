@@ -1,81 +1,54 @@
 module EditUserInformation exposing (..)
 import Account
 import Location exposing (Location)
---import Html.Events exposing (onClick, onInput)
+import Html.App
+import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (id, list, href, placeholder)
 import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
 import Http
 import Json.Encode as Encode
 import Task exposing (Task)
 import Json.Decode as Decode
-
-
-
-
+import InputLocation
 
 type alias Model =
-  { locations: List Location
-  , getError: Maybe Http.Error
-  , updateError: Maybe Http.Error
-  , addError: Maybe Http.Error
-  , removeError: Maybe Http.Error
+  {user: Account.User
   , status: String
+  , name: String
+  , country: String
+  , city: String
+  , postal: String
+  , currentLocations: List InputLocation.Model
   }
 
-
-init : Account.User -> (Model, Cmd Msg)
+init : Account.User -> Model
 init user =
-  (
-  { locations = []
-  , getError = Nothing
-  , updateError = Nothing
-  , addError = Nothing
-  , removeError = Nothing
-  , status = ""
-  }, getCmd user
-  )
+  {user = user
+  , status = "initial"
+  , name = ""
+  , country = ""
+  , city = ""
+  , postal = ""
+  , currentLocations = user.locations
+  }
 
 encoder : Model -> Encode.Value
-encoder {locations} =
+encoder model =
   Encode.object
-    [("locations", Encode.list (List.map Location.encoder locations))
+    [("name", Encode.string model.name)
+    ,("country", Encode.string model.country)
+    ,("city", Encode.string model.city)
+    ,("postal", Encode.string model.postal)
     ]
 
-
-getCmd : Account.User -> Cmd Msg
-getCmd user =
-   Task.perform GetFailed GetComplete (getME user)
-
-getME : Account.User -> Platform.Task Http.Error (List Location.Location)
-getME user =
-  Http.get
-  (Decode.list Location.decoder) ("/api/" ++ toString user.id ++ "/getLocation")
-
-updateMe : Model -> Account.User -> Platform.Task Http.Error Location.Location
-updateMe model user =
-
+addME : Model -> Platform.Task Http.Error Location.Location
+addME model =
   (encoder model)
     |> Encode.encode 0
     |> Http.string
     |> post'
-      Location.decoder ("/api/" ++ toString user.id ++ "/updateLocation" )
+      Location.decoder ("/api/" ++ toString model.user.id ++ "/postLocation" )
 
-addME : Model -> Account.User -> Platform.Task Http.Error Location.Location
-addME model user =
-
-  (encoder model)
-    |> Encode.encode 0
-    |> Http.string
-    |> post'
-      Location.decoder ("/api/" ++ toString user.id ++ "/postLocation" )
-
-
-removeME : Account.User -> Platform.Task Http.Error Account.User
-removeME user =
-
-  delete'
-    Account.decoder
-    ("/api/" ++ toString user.id ++ "/deleteLocation" )
 
 type alias Context msg =
   { next : (Msg -> msg)
@@ -87,33 +60,41 @@ toCmd msg =
   Task.succeed msg
   |> Task.perform identity identity
 
-
 type Msg
-  =
-    {-ChangeName String
+  =AddME
+  |AddFailed Http.Error
+  |AddComplete Location
+  |ChangeName String
   |ChangeCo String
   |ChangeCi String
   |ChangePo String
-  -}
-  GetME
-  |GetFailed Http.Error
-  |GetComplete (List Location)
-{-
-  |UpdateME
-  |UpdateFailed Http.Error
-  |UpdateComplete Location
-  |AddME
-  |AddFailed Http.Error
-  |AddComplete Location
-  |RemoveME
-  |RemoveFailed Http.Error
-  |RemoveComplete Account.User
--}
+  |Modify Int InputLocation.Msg
 
-update : Context msg -> Msg -> Account.User -> Model -> (Model, Cmd msg)
-update context msg user model =
+modifyHelp : Int -> InputLocation.Msg -> Location -> (Location, Cmd Msg)
+modifyHelp targetId msg location =
+  if location.id /= targetId then
+    ( location, Cmd.none )
+
+  else
+    let
+      ( newLocation, cmds ) =
+        InputLocation.update msg location
+    in
+      ( newLocation
+      , Cmd.map (Modify targetId) cmds
+      )
+
+update : Msg -> Account.User -> Model -> (Model, Cmd Msg)
+update msg user model =
   case msg of
-{-
+    Modify givenId msg ->
+      let
+        (newLocations, cmd) =
+            List.unzip (List.map (modifyHelp givenId msg) model.currentLocations)
+      in
+        ({model
+        | currentLocations = newLocations}
+        , Cmd.batch cmd)
     ChangeName input ->
       { model | name = ( Debug.log "input" input) } ![]
     ChangeCo input ->
@@ -122,83 +103,84 @@ update context msg user model =
       { model | city = ( Debug.log "input" input) } ![]
     ChangePo input ->
       { model | postal = ( Debug.log "input" input) } ![]
-      -}
-    GetME ->
-      ({model | status = "getting"}
-      , Cmd.map context.next <| Task.perform GetFailed GetComplete ( getME (Debug.log "getting" user)))
-    GetFailed err ->
-      { model | getError = Just ( Debug.log "failed to get" err)} ![]
-    GetComplete locations ->
-      {model | status = "got", locations = locations } ![]
-{-
-    UpdateME ->
-      ({model | status = "updating"}
-      , Cmd.map context.next <| Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model) user ))
-    UpdateFailed err ->
-      { model | updateError = Just ( Debug.log "failed to update" err) } ![]
-    UpdateComplete updatedLocation ->
-      ({model | status = "updated"}, toCmd <| context.goHome updatedLocation)
     AddME ->
-      ({model | status = "adding"}, Task.perform AddFailed AddComplete ( addME (Debug.log "adding" model) user ))
-    AddFailed err ->
-      { model | addError = Just ( Debug.log "failedAdd" err) }![]
+      ({model
+      | status = "currently adding"}
+      , Task.perform AddFailed AddComplete ( addME (Debug.log "adding" model)))
+    AddFailed _ ->
+      { model | status = "failed to add"} ![]
     AddComplete addedLocation ->
-      {model | status = "added"} ![]
-
+      {model
+      | status = "add completed"
+      , name = ""
+      , country = ""
+      , city = ""
+      , postal = ""
+      , user = Account.listToUser (Account.addLocation user addedLocation) user
+      } ![]
+{-
     RemoveME ->
-      ({model | status = "removing"}
-      , Cmd.map context.next <| Task.perform RemoveFailed RemoveComplete ( removeME (Debug.log "removing" user)))
+      ({model | removeError = Nothing}
+      , Cmd.map context.next <| Task.perform RemoveFailed RemoveComplete ( removeME |> (nth (((List.length)-1) user.locations))))
     RemoveFailed err ->
       { model | removeError = Just ( Debug.log "failed to remove" err) } ![]
     RemoveComplete currentUser ->
-      ({model | status = "removed"}, toCmd <| context.goHome Location.empty)
+      ({model | removeError = Nothing}, toCmd <| context.goHome user.locations)
+
 -}
 
+
+htmlToList: Html b -> List (Html b)
+htmlToList a =
+  flip (::) [] a
 
 view : Model -> Html Msg
 view model =
   div [ id "header" ]
     [ h2 []
       [text "edit user (location) information"]
-    ]
-  {-, div [ id "locationInputs"]
-    [ h2 [] [ text "Constituent Of: "]
-      , input
-        [ placeholder "Location Name"
-        , onInput ChangeName
-        , Html.Attributes.value model.name
-        ]
+  , div [id "homeButton"]
+      [ button
         []
-      , input
-        [ placeholder "Country Name"
-        , onInput ChangeCo
-        , Html.Attributes.value model.country
-        ]
-        []
-      , input
-        [ placeholder "City Name"
-        , onInput ChangeCi
-        , Html.Attributes.value model.city
-        ]
-        []
-      , input
-      [ placeholder "Postal Number"
-      , onInput ChangePo
-      , Html.Attributes.value model.postal
+        [text "This button doesn't do anything"]
       ]
-      []
-    ]
-  , div [ id "updateLocation"]
-    [ button [ onClick UpdateME ] [text "CHANGE YOUR LOCATION"]]
-{-
+  , div [id "addLocationFields"]
+      [ text "Constituent Of: "]
+        , input
+            [ placeholder "Location Name"
+            , onInput ChangeName
+            , Html.Attributes.value model.name
+            ]
+            []
+        , input
+            [ placeholder "Country Name"
+            , onInput ChangeCo
+            , Html.Attributes.value model.country
+            ]
+            []
+        , input
+            [ placeholder "City Name"
+            , onInput ChangeCi
+            , Html.Attributes.value model.city
+            ]
+            []
+        , input
+            [ placeholder "Postal Number"
+            , onInput ChangePo
+            , Html.Attributes.value model.postal
+            ]
+            []
   , div [ id "addLocation"]
-    [ button [onClick AddME][text "ADD YOUR LOCATION"]]
--}
-  , div [ id "deleteLocation"]
-    [ button [onClick RemoveME][text "REMOVE YOUR LOCATION"]]
-
-  , div [][text model.status]
-  ]-}
+    [ button
+      [onClick AddME]
+      [text "Add new location"]
+    ]
+  , div [ id "currentLocations"]
+        (List.map viewCurrentLocations model.currentLocations)
+    ]
+viewCurrentLocations: InputLocation.Model -> Html Msg
+viewCurrentLocations location =
+  Html.App.map ( Modify location.id ) (InputLocation.view location)
 
 delete' : Decode.Decoder a -> String ->Task.Task Http.Error a
 delete' decoder url =

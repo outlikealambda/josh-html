@@ -33,7 +33,7 @@ init =
         , emails = []
         , locations = []
         }
-    (inputLocation, msg) =
+    inputLocation =
       EditUserInformation.init user
   in
     ({page = Home
@@ -42,7 +42,7 @@ init =
     , userIdInput = ""
     , user = user
     , inputLocation = inputLocation
-    }, Cmd.map UpdateLocationMsg msg)--Cmd.map UpdateLocationMsg msg)
+    }, Cmd.map UpdateLocationMsg Cmd.none)--Cmd.map UpdateLocationMsg msg)
 
 subscriptions' : Model -> Sub Msg
 subscriptions' model =
@@ -84,7 +84,7 @@ update msg model =
        Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.userIdInput)))
     FetchUserComplete userInfo ->
       let
-        (inputLocation, msg) =
+        inputLocation =
           EditUserInformation.init userInfo
       in
 
@@ -94,28 +94,21 @@ update msg model =
 
     GoToUpdateLocation ->
       let
-        (inputLocation, msg) =
+        inputLocation =
           EditUserInformation.init model.user
       in
-        ({model | page = Locay, inputLocation = inputLocation }, Cmd.map UpdateLocationMsg msg)
+        ({model | page = Locay, inputLocation = inputLocation }, Cmd.map UpdateLocationMsg Cmd.none)
 
     UpdateLocationMsg msg ->
       let
-        context =
-          {next = UpdateLocationMsg
-          , goHome = LocationChanged
-          }
-        (update, updateCmd) =
-          EditUserInformation.update context msg model.user model.inputLocation
+        (update, updateMsg) =
+          EditUserInformation.update msg model.user model.inputLocation
       in
-        ({model | inputLocation = update}, updateCmd)
+        ({model | inputLocation = update}, Cmd.map UpdateLocationMsg updateMsg)
     LocationChanged updatedLocation->
       {model | page = Home, user = updateUserLocation updatedLocation model.user} ![]
 
 
-htmlToList: Html b -> List (Html b)
-htmlToList a =
-  flip (::) [] a
 
 viewHome : Model -> Html Msg
 viewHome model =
@@ -164,10 +157,10 @@ viewHome model =
         ]
       , div [ id "location"]
         [ h1 []
-          [text "Your location"]
+          [text "Your location(s)"]
         , ul []
           (List.map (li []
-            << htmlToList
+            << EditUserInformation.htmlToList
             << text
             << Location.toString)
             model.user.locations)
