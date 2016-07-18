@@ -10,6 +10,7 @@ type alias User =
   , locations : List Location
   }
 
+
 type alias Email = String
 
 addLocation : User -> Location -> List Location

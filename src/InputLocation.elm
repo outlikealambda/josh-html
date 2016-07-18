@@ -37,11 +37,13 @@ encoder model =
 
 updateMe : Model -> Platform.Task Http.Error Location
 updateMe model =
+
   (encoder model)
     |> Encode.encode 0
     |> Http.string
     |> post'
       Location.decoder ("/api/" ++ toString model.id ++ "/updateLocation" )
+
 
 removeME : Model -> Platform.Task Http.Error Account.User
 removeME model =
