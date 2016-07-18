@@ -36,7 +36,6 @@ encoder : Location -> Encode.Value
 encoder {name, id, country, city, postal} =
   Encode.object
     [ ("name", Encode.string name)
-    --, ("id", Encode.int id)
     , ("country", Encode.string country)
     , ("city", Encode.string city)
     , ("postal", Encode.string postal)

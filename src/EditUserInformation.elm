@@ -50,16 +50,6 @@ addME model =
       Location.decoder ("/api/" ++ toString model.user.id ++ "/postLocation" )
 
 
-type alias Context msg =
-  { next : (Msg -> msg)
-  , goHome : List Location.Location -> msg
-  }
-
-toCmd : a -> Cmd a
-toCmd msg =
-  Task.succeed msg
-  |> Task.perform identity identity
-
 type Msg
   =AddME
   |AddFailed Http.Error
@@ -74,7 +64,6 @@ modifyHelp : Int -> InputLocation.Msg -> Location -> (Location, Cmd Msg)
 modifyHelp targetId msg location =
   if location.id /= targetId then
     ( location, Cmd.none )
-
   else
     let
       ( newLocation, cmds ) =
@@ -118,16 +107,6 @@ update msg user model =
       , postal = ""
       , user = Account.listToUser (Account.addLocation user addedLocation) user
       } ![]
-{-
-    RemoveME ->
-      ({model | removeError = Nothing}
-      , Cmd.map context.next <| Task.perform RemoveFailed RemoveComplete ( removeME |> (nth (((List.length)-1) user.locations))))
-    RemoveFailed err ->
-      { model | removeError = Just ( Debug.log "failed to remove" err) } ![]
-    RemoveComplete currentUser ->
-      ({model | removeError = Nothing}, toCmd <| context.goHome user.locations)
-
--}
 
 
 htmlToList: Html b -> List (Html b)
@@ -141,7 +120,7 @@ view model =
       [text "edit user (location) information"]
   , div [id "homeButton"]
       [ button
-        []
+        [ ]
         [text "This button doesn't do anything"]
       ]
   , div [id "addLocationFields"]
