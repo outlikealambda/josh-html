@@ -10,10 +10,11 @@ import Json.Encode as Encode
 import Task exposing (Task)
 import Json.Decode as Decode
 import InputLocation
+import Json.Decode as Json exposing ((:=))
+
 
 type alias Model =
   {user: Account.User
-  , status: String
   , name: String
   , country: String
   , city: String
@@ -24,7 +25,6 @@ type alias Model =
 init : Account.User -> Model
 init user =
   {user = user
-  , status = "initial"
   , name = ""
   , country = ""
   , city = ""
@@ -33,27 +33,28 @@ init user =
   }
 
 encoder : Model -> Encode.Value
-encoder model =
+encoder {name,country,city,postal} =
   Encode.object
-    [("name", Encode.string model.name)
-    ,("country", Encode.string model.country)
-    ,("city", Encode.string model.city)
-    ,("postal", Encode.string model.postal)
+    [("name", Encode.string name)
+    ,("country", Encode.string country)
+    ,("city", Encode.string city)
+    ,("postal", Encode.string postal)
     ]
 
-addME : Model -> Platform.Task Http.Error Location.Location
+
+addME : Model -> Platform.Task Http.Error (List Location.Location)
 addME model =
   (encoder model)
     |> Encode.encode 0
     |> Http.string
     |> post'
-      Location.decoder ("/api/" ++ toString model.user.id ++ "/postLocation" )
+      (Decode.list Location.decoder) ("/api/" ++ toString model.user.id ++ "/postLocation" )
 
 
 type Msg
   =AddME
   |AddFailed Http.Error
-  |AddComplete Location
+  |AddComplete (List Location)
   |ChangeName String
   |ChangeCo String
   |ChangeCi String
@@ -93,21 +94,19 @@ update msg user model =
     ChangePo input ->
       { model | postal = ( Debug.log "input" input) } ![]
     AddME ->
-      ({model
-      | status = "currently adding"}
+      (model
       , Task.perform AddFailed AddComplete ( addME (Debug.log "adding" model)))
     AddFailed _ ->
-      { model | status = "failed to add"} ![]
+      (model, Debug.log "failed to add" Cmd.none)
     AddComplete addedLocation ->
-      {model
-      | status = "add completed"
-      , name = ""
+      ({model
+      | name = ""
       , country = ""
       , city = ""
       , postal = ""
-      , user = Account.listToUser (Account.addLocation user addedLocation) user
-      } ![]
-
+      , user = Account.listToUser (List.append user.locations addedLocation) user
+      , currentLocations = user.locations
+      }, Debug.log "completed add" Cmd.none)
 
 htmlToList: Html b -> List (Html b)
 htmlToList a =

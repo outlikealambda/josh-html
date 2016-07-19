@@ -37,7 +37,6 @@ encoder model =
 
 updateMe : Model -> Platform.Task Http.Error Location
 updateMe model =
-
   (encoder model)
     |> Encode.encode 0
     |> Http.string
@@ -70,15 +69,16 @@ update msg model =
       (Just model
       , Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model)))
     UpdateFailed _ ->
-      Just model ![]
-    UpdateComplete {name, id, country, city, postal} ->
-      Just {model
+      (Just model, Debug.log "failed to update" Cmd.none)
+    UpdateComplete {name,id,country,city,postal} ->
+
+      (Just {model
       | name = name
       , id = id
       , country = country
       , city = city
       , postal = postal
-      } ![]
+      }, Debug.log "completed update" Cmd.none)
     RemoveLocation ->
       (Just model
       , Task.perform RemoveFailed RemoveComplete ( removeME (Debug.log "removing" model)))
