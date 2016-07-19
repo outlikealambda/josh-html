@@ -136,7 +136,6 @@ viewHome model =
       , div [ id "fetchUser"]
         ([ input [ placeholder "User ID"
         , onInput Change
-        , Html.Attributes.value model.userIdInput
         ] []
         , button [ onClick FetchUser ] [text "Go to User"]
         ]
@@ -152,7 +151,6 @@ viewHome model =
         , p []
           [text "we aren't doing this right now"]
         ]
-
       , div [ id "email"]
         [ h1 []
           [text "Your email"]
