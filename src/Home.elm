@@ -24,6 +24,10 @@ type alias Model =
   , inputLocation : EditUserInformation.Model
   }
 
+type Page
+  = Home
+  |Locay
+
 init : (Model, Cmd Msg)
 init =
   let
@@ -49,18 +53,13 @@ subscriptions' model =
   Sub.none
 
 
-type Page
-  = Home
-  |Locay
-
-
 type Msg
   = FetchUser
   | FetchUserComplete Account.User
   | FetchUserFailed Http.Error
   | Change String
   | GoToUpdateLocation
-  | LocationChanged (List Location)
+  | ReturnHome
   | UpdateLocationMsg EditUserInformation.Msg
 
 
@@ -78,35 +77,44 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Change input ->
-      ({ model | userIdInput = ( Debug.log "input" input) } , Cmd.none )
+      ({ model | userIdInput = ( Debug.log "input" input) }
+      , Cmd.none )
+
     FetchUser ->
       (model,
-       Task.perform FetchUserFailed FetchUserComplete ( fetchUser (Debug.log "fetching" model.userIdInput)))
+       Task.perform
+       FetchUserFailed
+       FetchUserComplete ( fetchUser (Debug.log "fetching" model.userIdInput)))
+
     FetchUserComplete userInfo ->
       let
         inputLocation =
           EditUserInformation.init userInfo
       in
-
       ({ model | user = userInfo} , Cmd.none )
+      
     FetchUserFailed err ->
-      ({ model | fetchError = Just ( Debug.log "failedFetch" err) } , Cmd.none )
+      ({ model | fetchError = Just ( Debug.log "failedFetch" err) }
+      , Cmd.none )
 
     GoToUpdateLocation ->
       let
         inputLocation =
           EditUserInformation.init model.user
       in
-        ({model | page = Locay, inputLocation = inputLocation }, Cmd.map UpdateLocationMsg Cmd.none)
+        ({model | page = Locay, inputLocation = inputLocation }
+        , Cmd.map UpdateLocationMsg Cmd.none)
 
     UpdateLocationMsg msg ->
       let
         (update, updateMsg) =
           EditUserInformation.update msg model.user model.inputLocation
       in
-        ({model | inputLocation = update}, Cmd.map UpdateLocationMsg updateMsg)
-    LocationChanged updatedLocation->
-      {model | page = Home, user = updateUserLocation updatedLocation model.user} ![]
+        ({model | inputLocation = update}
+        , Cmd.map UpdateLocationMsg updateMsg)
+
+    ReturnHome ->
+      ({model | page = Home}, Cmd.none)
 
 
 
@@ -135,14 +143,6 @@ viewHome model =
         , p []
           [text model.user.name]
         ]
-{-
-      , div []
-        [ h1 []
-          [text "User ID"]
-        , p[]
-          [text (toString model.user.id)]
-        ]
--}
       , div [ id "accounts"]
         [ h1 [][text "Accounts"]
         , p []
@@ -178,4 +178,11 @@ view model =
     Home ->
       viewHome model
     Locay ->
-      Html.App.map UpdateLocationMsg (EditUserInformation.view model.inputLocation)
+      div [][
+      (Html.App.map UpdateLocationMsg (EditUserInformation.view model.inputLocation))
+      , div [id "homeButton"]
+          [ button
+            [ onClick ReturnHome ]
+            [text "Return Home"]
+          ]
+        ]

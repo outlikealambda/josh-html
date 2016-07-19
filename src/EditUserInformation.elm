@@ -118,11 +118,6 @@ view model =
   div [ id "header" ]
     [ h2 []
       [text "edit user (location) information"]
-  , div [id "homeButton"]
-      [ button
-        [ ]
-        [text "This button doesn't do anything"]
-      ]
   , div [id "addLocationFields"]
       [ text "Constituent Of: "]
         , input

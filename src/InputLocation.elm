@@ -51,15 +51,6 @@ removeME model =
     Account.decoder
     ("/api/" ++ toString model.id ++ "/deleteLocation" )
 
-toCmd : a -> Cmd a
-toCmd msg =
-  Task.succeed msg
-  |> Task.perform identity identity
-
-type alias Context msg =
-  { next : (Msg -> msg)
-  , goHome : Location -> msg
-  }
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
