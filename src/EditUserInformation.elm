@@ -19,7 +19,6 @@ type alias Model =
   , country: String
   , city: String
   , postal: String
-  , currentLocations: List InputLocation.Model
   }
 
 init : Account.User -> Model
@@ -29,7 +28,6 @@ init user =
   , country = ""
   , city = ""
   , postal = ""
-  , currentLocations = user.locations
   }
 
 encoder : Model -> Encode.Value
@@ -80,10 +78,10 @@ update msg user model =
     Modify givenId msg ->
       let
         (newLocations, cmd) =
-            List.unzip (List.map (modifyHelp givenId msg) model.currentLocations)
+            List.unzip (List.map (modifyHelp givenId msg) model.user.locations)
       in
         ({model
-        | currentLocations = (List.filterMap identity newLocations)}
+        | user = Account.listToUser (List.filterMap identity newLocations) model.user}
         , Cmd.batch cmd)
     ChangeName input ->
       { model | name = ( Debug.log "input" input) } ![]
@@ -105,7 +103,6 @@ update msg user model =
       , city = ""
       , postal = ""
       , user = Account.listToUser (List.append user.locations addedLocation) user
-      , currentLocations = user.locations
       }, Debug.log "completed add" Cmd.none)
 
 htmlToList: Html b -> List (Html b)
@@ -149,7 +146,7 @@ view model =
       [text "Add new location"]
     ]
   , div [ id "currentLocations"]
-        (List.map viewCurrentLocations model.currentLocations)
+        (List.map viewCurrentLocations model.user.locations)
     ]
 viewCurrentLocations: InputLocation.Model -> Html Msg
 viewCurrentLocations location =

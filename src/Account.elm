@@ -18,7 +18,7 @@ addLocation user location =
 
 listToUser : List Location -> User -> User
 listToUser locations user =
-  user
+  {user | locations = locations}
 
 decoder : Json.Decoder User
 decoder =
