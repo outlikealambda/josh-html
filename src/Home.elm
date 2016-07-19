@@ -18,7 +18,6 @@ main =
 type alias Model =
   { fetchError : Maybe Http.Error
   , userIdInput : String
-  , header : String
   , user : Account.User
   , page: Page
   , inputLocation : EditUserInformation.Model
@@ -42,7 +41,6 @@ init =
   in
     ({page = Home
     , fetchError = Nothing
-    , header = "User Information"
     , userIdInput = ""
     , user = user
     , inputLocation = inputLocation
@@ -92,7 +90,7 @@ update msg model =
           EditUserInformation.init userInfo
       in
       ({ model | user = userInfo} , Cmd.none )
-      
+
     FetchUserFailed err ->
       ({ model | fetchError = Just ( Debug.log "failedFetch" err) }
       , Cmd.none )
@@ -114,7 +112,10 @@ update msg model =
         , Cmd.map UpdateLocationMsg updateMsg)
 
     ReturnHome ->
-      ({model | page = Home}, Cmd.none)
+      ({model | page = Home},
+      Task.perform
+      FetchUserFailed
+      FetchUserComplete ( fetchUser (Debug.log "fetching" toString model.inputLocation.user.id)))
 
 
 
@@ -130,10 +131,13 @@ viewHome model =
     body[][
       div [ id "header"]
         [ h2 []
-          [text model.header]
+          [text "User Information"]
         ]
       , div [ id "fetchUser"]
-        ([ input [ placeholder "User ID", onInput Change ] []
+        ([ input [ placeholder "User ID"
+        , onInput Change
+        , Html.Attributes.value model.userIdInput
+        ] []
         , button [ onClick FetchUser ] [text "Go to User"]
         ]
           ++ errorUser)
