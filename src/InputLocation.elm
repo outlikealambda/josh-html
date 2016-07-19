@@ -1,9 +1,9 @@
 module InputLocation exposing (..)
 import Location exposing (Location)
-import Account
 import Http
 import Json.Encode as Encode
 import Json.Decode as Decode
+import Json.Decode as Json exposing ((:=))
 import Html.Events exposing (onClick, onInput)
 import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
 import Html.Attributes exposing (id, list, href, placeholder)
@@ -21,7 +21,7 @@ type Msg
   |UpdateComplete Location
   |RemoveLocation
   |RemoveFailed Http.Error
-  |RemoveComplete Account.User
+  |RemoveComplete Int
 
 
 
@@ -45,31 +45,34 @@ updateMe model =
       Location.decoder ("/api/" ++ toString model.id ++ "/updateLocation" )
 
 
-removeME : Model -> Platform.Task Http.Error Account.User
+removeME : Model -> Platform.Task Http.Error Int
 removeME model =
   delete'
-    Account.decoder
+    removalDecoder
     ("/api/" ++ toString model.id ++ "/deleteLocation" )
 
+removalDecoder : Json.Decoder Int
+removalDecoder =
+  Json.int
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> (Maybe Model, Cmd Msg)
 update msg model =
   case msg of
     ChangeName input ->
-      { model | name = ( Debug.log "input" input) } ![]
+      Just { model | name = ( Debug.log "input" input) } ![]
     ChangeCo input ->
-      { model | country = ( Debug.log "input" input) } ![]
+      Just { model | country = ( Debug.log "input" input) } ![]
     ChangeCi input ->
-      { model | city = ( Debug.log "input" input) } ![]
+      Just { model | city = ( Debug.log "input" input) } ![]
     ChangePo input ->
-      { model | postal = ( Debug.log "input" input) } ![]
+      Just { model | postal = ( Debug.log "input" input) } ![]
     UpdateLocation ->
-      (model
+      (Just model
       , Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model)))
     UpdateFailed _ ->
-      model ![]
+      Just model ![]
     UpdateComplete {name, id, country, city, postal} ->
-      {model
+      Just {model
       | name = name
       , id = id
       , country = country
@@ -77,12 +80,12 @@ update msg model =
       , postal = postal
       } ![]
     RemoveLocation ->
-      (model
+      (Just model
       , Task.perform RemoveFailed RemoveComplete ( removeME (Debug.log "removing" model)))
     RemoveFailed _ ->
-      model ![]
-    RemoveComplete _ ->
-      model ![]
+      (Just model, Debug.log "failed to remove" Cmd.none)
+    RemoveComplete locationId ->
+      (Nothing, Debug.log "completed removal" Cmd.none)
 
 view : Model -> Html Msg
 view model =

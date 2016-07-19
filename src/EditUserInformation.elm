@@ -60,17 +60,17 @@ type Msg
   |ChangePo String
   |Modify Int InputLocation.Msg
 
-modifyHelp : Int -> InputLocation.Msg -> Location -> (Location, Cmd Msg)
+modifyHelp : Int -> InputLocation.Msg -> Location -> ( Maybe Location, Cmd Msg)
 modifyHelp targetId msg location =
   if location.id /= targetId then
-    ( location, Cmd.none )
+    ( Just location, Cmd.none )
   else
     let
-      ( newLocation, cmds ) =
+      ( maybeNewLocation, cmd ) =
         InputLocation.update msg location
     in
-      ( newLocation
-      , Cmd.map (Modify targetId) cmds
+      ( maybeNewLocation
+      , Cmd.map (Modify targetId) cmd
       )
 
 update : Msg -> Account.User -> Model -> (Model, Cmd Msg)
@@ -82,7 +82,7 @@ update msg user model =
             List.unzip (List.map (modifyHelp givenId msg) model.currentLocations)
       in
         ({model
-        | currentLocations = newLocations}
+        | currentLocations = (List.filterMap identity newLocations)}
         , Cmd.batch cmd)
     ChangeName input ->
       { model | name = ( Debug.log "input" input) } ![]
