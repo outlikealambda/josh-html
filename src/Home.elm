@@ -25,7 +25,7 @@ type alias Model =
 
 type Page
   = Home
-  |Locay
+  | Locay
 
 init : (Model, Cmd Msg)
 init =
@@ -39,12 +39,14 @@ init =
     inputLocation =
       EditUserInformation.init user
   in
-    ({page = Home
-    , fetchError = Nothing
-    , userIdInput = ""
-    , user = user
-    , inputLocation = inputLocation
-    }, Cmd.map UpdateLocationMsg Cmd.none)--Cmd.map UpdateLocationMsg msg)
+    ( { page = Home
+      , fetchError = Nothing
+      , userIdInput = ""
+      , user = user
+      , inputLocation = inputLocation
+      }
+    , Cmd.map UpdateLocationMsg Cmd.none
+    )
 
 subscriptions' : Model -> Sub Msg
 subscriptions' model =
@@ -113,9 +115,9 @@ update msg model =
 
     ReturnHome ->
       ({model | page = Home},
-      Task.perform
-      FetchUserFailed
-      FetchUserComplete ( fetchUser (Debug.log "fetching" toString model.inputLocation.user.id)))
+        Task.perform
+        FetchUserFailed
+        FetchUserComplete ( fetchUser (Debug.log "fetching" toString model.inputLocation.user.id)))
 
 
 
@@ -126,52 +128,78 @@ viewHome model =
       Nothing ->
         []
       Just err ->
-        [text ("  " ++ toString err)]
+        [ text ("  " ++ toString err) ]
   in
-    body[][
-      div [ id "header"]
-        [ h2 []
-          [text "User Information"]
+    body
+      []
+      [ div
+        [ id "header"]
+        [ h2
+          []
+          [ text "User Information" ]
         ]
-      , div [ id "fetchUser"]
-        ([ input [ placeholder "User ID"
-        , onInput Change
-        ] []
-        , button [ onClick FetchUser ] [text "Go to User"]
-        ]
-          ++ errorUser)
-      , div [ id "username"]
-        [ h1 []
-          [text "Username"]
-        , p []
-          [text model.user.name]
-        ]
-      , div [ id "accounts"]
-        [ h1 [][text "Accounts"]
-        , p []
-          [text "we aren't doing this right now"]
-        ]
-      , div [ id "email"]
-        [ h1 []
-          [text "Your email"]
-        , p []
-          [text (toString model.user.emails)]
-        ]
-      , div [ id "location"]
-        [ h1 []
-          [text "Your location(s)"]
-        , ul []
-          (List.map (li []
-            << EditUserInformation.htmlToList
-            << text
-            << Location.toString)
+      , div
+          [ id "fetchUser"]
+          ( [ input
+              [ placeholder "User ID"
+              , onInput Change
+              ]
+              []
+            , button
+              [ onClick FetchUser ]
+              [text "Go to User"]
+            ]
+            ++ errorUser
+          )
+      , div
+          [ id "username"]
+          [ h1
+            []
+            [ text "Username" ]
+            , p
+              []
+              [ text model.user.name ]
+          ]
+      , div
+          [ id "accounts"]
+          [ h1
+            []
+            [text "Accounts"]
+            , p
+              []
+              [text "we aren't doing this right now"]
+          ]
+      , div
+          [ id "email"]
+          [ h1
+            []
+            [ text "Your email" ]
+            , p
+              []
+              [ text (toString model.user.emails) ]
+          ]
+      , div
+          [ id "location" ]
+          [ h1
+            []
+            [ text "Your location(s)" ]
+          , ul
+            []
+            ( List.map
+              ( li
+                []
+                << EditUserInformation.htmlToList
+                << text
+                << Location.toString
+              )
             model.user.locations)
-        ]
-      , div [ id "updateLocay" ]
-        [
-          button [ onClick GoToUpdateLocation ]
-          [text "update"]
-        ]
+          ]
+      , div
+          [ id "updateLocay" ]
+          [ button
+            [ onClick GoToUpdateLocation ]
+            [ text "update" ]
+          ]
       ]
 
 view :  Model -> Html Msg
@@ -180,11 +208,13 @@ view model =
     Home ->
       viewHome model
     Locay ->
-      div [][
-      (Html.App.map UpdateLocationMsg (EditUserInformation.view model.inputLocation))
-      , div [id "homeButton"]
-          [ button
-            [ onClick ReturnHome ]
-            [text "Return Home"]
-          ]
+      div
+        []
+        [ Html.App.map UpdateLocationMsg (EditUserInformation.view model.inputLocation)
+        , div
+            [ id "homeButton" ]
+            [ button
+              [ onClick ReturnHome ]
+              [ text "Return Home" ]
+            ]
         ]

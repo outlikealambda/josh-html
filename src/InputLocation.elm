@@ -12,16 +12,16 @@ import Task exposing (Task)
 type alias Model = Location
 
 type Msg
-  =ChangeName String
-  |ChangeCo String
-  |ChangeCi String
-  |ChangePo String
-  |UpdateLocation
-  |UpdateFailed Http.Error
-  |UpdateComplete Location
-  |RemoveLocation
-  |RemoveFailed Http.Error
-  |RemoveComplete Int
+  = ChangeName String
+  | ChangeCo String
+  | ChangeCi String
+  | ChangePo String
+  | UpdateLocation
+  | UpdateFailed Http.Error
+  | UpdateComplete Location
+  | RemoveLocation
+  | RemoveFailed Http.Error
+  | RemoveComplete Int
 
 
 
@@ -71,14 +71,15 @@ update msg model =
     UpdateFailed _ ->
       (Just model, Debug.log "failed to update" Cmd.none)
     UpdateComplete {name,id,country,city,postal} ->
-
-      (Just {model
-      | name = name
-      , id = id
-      , country = country
-      , city = city
-      , postal = postal
-      }, Debug.log "completed update" Cmd.none)
+      (Just { model
+            | name = name
+            , id = id
+            , country = country
+            , city = city
+            , postal = postal
+            }
+      , Debug.log "completed update" Cmd.none
+      )
     RemoveLocation ->
       (Just model
       , Task.perform RemoveFailed RemoveComplete ( removeME (Debug.log "removing" model)))
@@ -89,44 +90,48 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  div [ id "locationInputs"]
-    [ h2 []
+  div
+    [ id "locationInputs" ]
+    [ h2
       []
-        , input
-            [ placeholder "Location Name"
-            , onInput ChangeName
-            , Html.Attributes.value model.name
-            ]
-            []
-        , input
-            [ placeholder "Country Name"
-            , onInput ChangeCo
-            , Html.Attributes.value model.country
-            ]
-            []
-        , input
-            [ placeholder "City Name"
-            , onInput ChangeCi
-            , Html.Attributes.value model.city
-            ]
-            []
-        , input
-            [ placeholder "Postal Number"
-            , onInput ChangePo
-            , Html.Attributes.value model.postal
-            ]
-            []
-  , div [ id "updateLocation"]
-    [ button
-      [ onClick UpdateLocation ]
-      [text "CHANGE THIS LOCATION"]
-    ]
-  , div [ id "deleteLocation"]
-    [ button
-      [onClick RemoveLocation]
-      [text "REMOVE THIS LOCATION"]
-    ]
-    ]
+      []
+      , input
+        [ placeholder "Location Name"
+        , onInput ChangeName
+        , Html.Attributes.value model.name
+        ]
+        []
+      , input
+        [ placeholder "Country Name"
+        , onInput ChangeCo
+        , Html.Attributes.value model.country
+        ]
+        []
+      , input
+          [ placeholder "City Name"
+          , onInput ChangeCi
+          , Html.Attributes.value model.city
+          ]
+          []
+      , input
+          [ placeholder "Postal Number"
+          , onInput ChangePo
+          , Html.Attributes.value model.postal
+          ]
+          []
+  , div
+      [ id "updateLocation" ]
+      [ button
+        [ onClick UpdateLocation ]
+        [ text "CHANGE THIS LOCATION" ]
+      ]
+  , div
+      [ id "deleteLocation" ]
+      [ button
+        [ onClick RemoveLocation ]
+        [ text "REMOVE THIS LOCATION" ]
+      ]
+      ]
 
 delete' : Decode.Decoder a -> String ->Task.Task Http.Error a
 delete' decoder url =
