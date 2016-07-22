@@ -120,31 +120,31 @@ view model =
       [ text "edit user (location) information" ]
   , div
       [ id "addLocationFields" ]
-        [ text "Constituent Of: " ]
-          , input
-              [ placeholder "Location Name"
-              , onInput ChangeName
-              , Html.Attributes.value model.name
-              ]
-              []
-          , input
-              [ placeholder "Country Name"
-              , onInput ChangeCo
-              , Html.Attributes.value model.country
-              ]
-              []
-          , input
-              [ placeholder "City Name"
-              , onInput ChangeCi
-              , Html.Attributes.value model.city
-              ]
-              []
-          , input
-              [ placeholder "Postal Number"
-              , onInput ChangePo
-              , Html.Attributes.value model.postal
-              ]
-              []
+      [ text "Constituent Of: " ]
+  , input
+    [ placeholder "Location Name"
+    , onInput ChangeName
+    , Html.Attributes.value model.name
+    ]
+    []
+  , input
+      [ placeholder "Country Name"
+      , onInput ChangeCo
+      , Html.Attributes.value model.country
+      ]
+      []
+  , input
+      [ placeholder "City Name"
+      , onInput ChangeCi
+      , Html.Attributes.value model.city
+      ]
+      []
+  , input
+      [ placeholder "Postal Number"
+      , onInput ChangePo
+      , Html.Attributes.value model.postal
+      ]
+      []
   , div
       [ id "addLocation" ]
       [ button
@@ -153,8 +153,8 @@ view model =
       ]
   , div
       [ id "currentLocations" ]
-          (List.map viewCurrentLocations model.user.locations)
-    ]
+      (List.map viewCurrentLocations model.user.locations)
+  ]
 viewCurrentLocations: InputLocation.Model -> Html Msg
 viewCurrentLocations location =
   Html.App.map ( Modify location.id ) (InputLocation.view location)

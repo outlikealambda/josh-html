@@ -95,30 +95,30 @@ view model =
     [ h2
       []
       []
-      , input
-        [ placeholder "Location Name"
-        , onInput ChangeName
-        , Html.Attributes.value model.name
-        ]
-        []
-      , input
-        [ placeholder "Country Name"
-        , onInput ChangeCo
-        , Html.Attributes.value model.country
-        ]
-        []
-      , input
-          [ placeholder "City Name"
-          , onInput ChangeCi
-          , Html.Attributes.value model.city
-          ]
-          []
-      , input
-          [ placeholder "Postal Number"
-          , onInput ChangePo
-          , Html.Attributes.value model.postal
-          ]
-          []
+  , input
+    [ placeholder "Location Name"
+    , onInput ChangeName
+    , Html.Attributes.value model.name
+    ]
+    []
+  , input
+    [ placeholder "Country Name"
+    , onInput ChangeCo
+    , Html.Attributes.value model.country
+    ]
+    []
+  , input
+      [ placeholder "City Name"
+      , onInput ChangeCi
+      , Html.Attributes.value model.city
+      ]
+      []
+  , input
+      [ placeholder "Postal Number"
+      , onInput ChangePo
+      , Html.Attributes.value model.postal
+      ]
+      []
   , div
       [ id "updateLocation" ]
       [ button
@@ -131,7 +131,7 @@ view model =
         [ onClick RemoveLocation ]
         [ text "REMOVE THIS LOCATION" ]
       ]
-      ]
+  ]
 
 delete' : Decode.Decoder a -> String ->Task.Task Http.Error a
 delete' decoder url =
