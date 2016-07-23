@@ -48,7 +48,7 @@ removeME : Model -> Platform.Task Http.Error Int
 removeME model =
   delete'
     removalDecoder
-    ("/api/" ++ toString model.id ++ "/deleteLocation" )
+    ( "/api/" ++ toString model.id ++ "/deleteLocation" )
 
 removalDecoder : Json.Decoder Int
 removalDecoder =
@@ -70,14 +70,8 @@ update msg model =
       , Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model)))
     UpdateFailed _ ->
       (Just model, Debug.log "failed to update" Cmd.none)
-    UpdateComplete {name,id,country,city,postal} ->
-      (Just { model
-            | name = name
-            , id = id
-            , country = country
-            , city = city
-            , postal = postal
-            }
+    UpdateComplete location ->
+      (Just location
       , Debug.log "completed update" Cmd.none
       )
     RemoveLocation ->

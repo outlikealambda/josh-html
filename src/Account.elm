@@ -12,10 +12,6 @@ type alias User =
 
 type alias Email = String
 
-addLocation : User -> Location -> List Location
-addLocation user location =
-  (location :: user.locations)
-
 listToUser : List Location -> User -> User
 listToUser locations user =
   {user | locations = locations}

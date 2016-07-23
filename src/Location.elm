@@ -11,9 +11,10 @@ type alias Location =
   , postal: String
   }
 
+
 empty: Location
 empty =
-  {name = "none", id = -1 ,country = "none",city = "none",postal = "none"}
+  {name = "", id = -1 ,country = "",city = "",postal = ""}
 
 toString: Location -> String
 toString location =
