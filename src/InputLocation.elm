@@ -68,8 +68,8 @@ update msg model =
     UpdateLocation ->
       (Just model
       , Task.perform UpdateFailed UpdateComplete ( updateMe (Debug.log "updating" model)))
-    UpdateFailed _ ->
-      (Just model, Debug.log "failed to update" Cmd.none)
+    UpdateFailed err ->
+      (Just (Debug.log ("failed to update" ++ toString err) model), Cmd.none)
     UpdateComplete location ->
       (Just location
       , Debug.log "completed update" Cmd.none
